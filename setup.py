@@ -21,7 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'ms8607 = isdc_sensors.ms8607_test:main',
-            'dfrobot_mics = DFRobot_MICS_All:main'
+            'dfrobot_mics = DFRobot_MICS_All:main',
+            'all_sensor = all_sensors_member_function:main'
         ],
     },
 )
