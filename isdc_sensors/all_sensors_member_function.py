@@ -46,6 +46,7 @@ class DFRobot_MICS(object):
   __r0_red       =  1.0
   def __init__(self, bus):
     self.i2cbus = smbus.SMBus(bus)
+    #self.i2cbus = bus
 
   def sleep_mode(self):
     rslt = [0]*1
@@ -306,14 +307,17 @@ I2C_BUS          = 0x01
 
 MS8607_Enabled = True
 DFRobot_MICS_Enabled = True
+mics,sensor = None,None
 
 def setup():
+    global mics,sensor
     ## MS8607 Temp,Hum Sensor
     if MS8607_Enabled:
       i2c = board.I2C()
       sensor = adafruit_ms8607.MS8607(i2c)
     ## DfRobot Gas Sensor
     if DFRobot_MICS_Enabled:
+      i2c = board.I2C()
       mics = DFRobot_MICS_I2C(I2C_BUS ,MICS_ADDRESS_0)
       if mics.get_power_mode() == SLEEP_MODE:
           mics.wakeup_mode()
