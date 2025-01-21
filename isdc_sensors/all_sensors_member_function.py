@@ -6,6 +6,7 @@ import time
 import smbus
 import sys
 import os
+import requests
 
 ############################
 
@@ -305,9 +306,12 @@ class DFRobot_MICS_I2C(DFRobot_MICS):
 CALIBRATION_TIME = 0x03
 I2C_BUS          = 0x01
 
+Transmit_Data = True
+Transmit_URL = "https://localhost:3000/RecordSensorData?"
 MS8607_Enabled = True
 DFRobot_MICS_Enabled = True
 mics,sensor = None,None
+AllGases = {"CO":CO,"CH4":CH4,"C2H5OH":C2H5OH,"C3H8":C3H8,"C4H10":C4H10,"H2":H2,"H2S":H2S,"NH3":NH3,"NO":NO,"NO2":NO2}
 
 def setup():
     global mics,sensor
@@ -328,19 +332,39 @@ def setup():
 
 
 def loop():
+    SensorData = {}
     if MS8607_Enabled:
-      print("Pressure: %.2f hPa" % sensor.pressure)
-      print("Temperature: %.2f C" % sensor.temperature)
-      print("Humidity: %.2f %% rH" % sensor.relative_humidity)
+      SensorData['Pressure'] = sensor.pressure
+      SensorData['Temperature'] = sensor.temperature
+      SensorData['Humidity'] = sensor.relative_humidity
+      print("Pressure: %.2f hPa" % SensorData["Pressure"])
+      print("Temperature: %.2f C" % SensorData["Temperature"])
+      print("Humidity: %.2f %% rH" % SensorData["Humidity"])
       print("\n------------------------------------------------\n")
     if DFRobot_MICS_Enabled:
-      print("CO gas concentration is %.1f"%mics.get_gas_ppm(CO))
-      print("CH4 gas concentration is %.1f"%mics.get_gas_ppm(CH4))
-      print("C2H5OH gas concentration is %.1f"%mics.get_gas_ppm(C2H5OH))
-      print("H2 gas concentration is %.1f"%mics.get_gas_ppm(H2))
-      print("NH3 gas concentration is %.1f"%mics.get_gas_ppm(NH3))
-      print("NO2 gas concentration is %.1f"%mics.get_gas_ppm(NO2))
+      for Gas in AllGases:
+        SensorData[Gas] = mics.get_gas_ppm(AllGases[Gas])
+        print(Gas + " gas concentration is %.1f"%SensorData[Gas])
       print("\n------------------------------------------------\n")
+      # print("CO gas concentration is %.1f"%mics.get_gas_ppm(CO))
+      # print("CH4 gas concentration is %.1f"%mics.get_gas_ppm(CH4))
+      # print("C2H5OH gas concentration is %.1f"%mics.get_gas_ppm(C2H5OH))
+      # print("H2 gas concentration is %.1f"%mics.get_gas_ppm(H2))
+      # print("NH3 gas concentration is %.1f"%mics.get_gas_ppm(NH3))
+      # print("NO2 gas concentration is %.1f"%mics.get_gas_ppm(NO2))
+      # print("\n------------------------------------------------\n")
+    if Transmit_Data:
+      url = Transmit_URL
+      for data in SensorData:
+        url+=f"{data}={SensorData[data]}&"
+      print(url)
+      # try:
+      #   response = requests.get(url)
+      #   if response.status_code == 200:
+      #     print(response.text)
+      # except Exception:
+      #   pass
+
 
 def main():
     setup()
