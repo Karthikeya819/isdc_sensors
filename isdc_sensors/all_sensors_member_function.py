@@ -307,11 +307,11 @@ CALIBRATION_TIME = 0x03
 I2C_BUS          = 0x01
 
 Transmit_Data = True
-Transmit_URL = "https://localhost:3000/RecordSensorData?"
+Transmit_URL = "http://localhost:3000/RecordSensorData?"
 MS8607_Enabled = True
 DFRobot_MICS_Enabled = True
 mics,sensor = None,None
-AllGases = {"CO":CO,"CH4":CH4,"C2H5OH":C2H5OH,"C3H8":C3H8,"C4H10":C4H10,"H2":H2,"H2S":H2S,"NH3":NH3,"NO":NO,"NO2":NO2}
+AllGases = {"CO":CO,"CH4":CH4,"C2H5OH":C2H5OH,"H2":H2,"NH3":NH3,"NO2":NO2}
 
 def setup():
     global mics,sensor
