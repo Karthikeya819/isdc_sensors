@@ -7,6 +7,9 @@ import smbus
 import sys
 import os
 import requests
+import datetime
+import threading
+import random
 
 ############################
 
@@ -302,16 +305,28 @@ class DFRobot_MICS_I2C(DFRobot_MICS):
 
 ############################
 
+def generate_sensor_data(lower_limit,upper_limit,seed_value=42, num_samples=10):
+    random.seed(seed_value)
+    sensor_data = [round(random.uniform(lower_limit, upper_limit), 2) for _ in range(num_samples)]
+    return sensor_data
+
+############################
+
 
 CALIBRATION_TIME = 0x03
 I2C_BUS          = 0x01
 
+Sensor_Calibration = True
 Transmit_Data = True
-Transmit_URL = "http://localhost:3000/RecordSensorData?"
+Transmit_URL = "http://192.168.31.225:3000/RecordSensorData?"
 MS8607_Enabled = True
 DFRobot_MICS_Enabled = True
+CO2_Enabled = True
+O2_Enabled = True
 mics,sensor = None,None
 AllGases = {"CO":CO,"CH4":CH4,"C2H5OH":C2H5OH,"H2":H2,"NH3":NH3,"NO2":NO2}
+CO2_Data = generate_sensor_data(400,410)
+O2_Data = generate_sensor_data(20,22)
 
 def setup():
     global mics,sensor
@@ -328,11 +343,13 @@ def setup():
           print("wake up sensor success")
       else:
           print("the sensor is wake up mode")
-      mics.warm_up_time(CALIBRATION_TIME)
+      if Sensor_Calibration:
+        mics.warm_up_time(CALIBRATION_TIME)
 
 
 def loop():
     SensorData = {}
+    SensorData['Timestamp'] = str(datetime.datetime.now())
     if MS8607_Enabled:
       SensorData['Pressure'] = sensor.pressure
       SensorData['Temperature'] = sensor.temperature
@@ -346,24 +363,29 @@ def loop():
         SensorData[Gas] = mics.get_gas_ppm(AllGases[Gas])
         print(Gas + " gas concentration is %.1f"%SensorData[Gas])
       print("\n------------------------------------------------\n")
-      # print("CO gas concentration is %.1f"%mics.get_gas_ppm(CO))
-      # print("CH4 gas concentration is %.1f"%mics.get_gas_ppm(CH4))
-      # print("C2H5OH gas concentration is %.1f"%mics.get_gas_ppm(C2H5OH))
-      # print("H2 gas concentration is %.1f"%mics.get_gas_ppm(H2))
-      # print("NH3 gas concentration is %.1f"%mics.get_gas_ppm(NH3))
-      # print("NO2 gas concentration is %.1f"%mics.get_gas_ppm(NO2))
-      # print("\n------------------------------------------------\n")
+    
+    if CO2_Data:
+      SensorData['CO2'] = CO2_Data[int(random.random()*9)]
+    
+    if O2_Enabled:
+      SensorData['O2'] = O2_Data[int(random.random()*9)]
+
     if Transmit_Data:
       url = Transmit_URL
       for data in SensorData:
         url+=f"{data}={SensorData[data]}&"
       print(url)
-      # try:
-      #   response = requests.get(url)
-      #   if response.status_code == 200:
-      #     print(response.text)
-      # except Exception:
-      #   pass
+      threading.Thread(target=TransmitData,args=(url,),daemon=True).start()
+
+
+def TransmitData(url):
+    try:
+      response = requests.get(url)
+      if response.status_code == 200:
+        print(response.text)
+    except Exception:
+      pass
+
 
 
 def main():
