@@ -10,6 +10,7 @@ import requests
 import datetime
 import threading
 import random
+import csv
 
 ############################
 
@@ -327,9 +328,14 @@ mics,sensor = None,None
 AllGases = {"CO":CO,"CH4":CH4,"C2H5OH":C2H5OH,"H2":H2,"NH3":NH3,"NO2":NO2}
 CO2_Data = generate_sensor_data(400,410)
 O2_Data = generate_sensor_data(20,22)
+Sensor_Log_File_Name = f'/home/manas/ros2_ws/src/isdc_sensors/SensorData/{str(datetime.datetime.now())}.csv'
 
 def setup():
     global mics,sensor
+    with open(Sensor_Log_File_Name, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Timestamp','Pressure','Temperature','Humidity','CO','CH4','C2H5OH','H2','NH3','NO2','CO2','O2'])
+        print(f'Started Logging into file {Sensor_Log_File_Name}')
     ## MS8607 Temp,Hum Sensor
     if MS8607_Enabled:
       i2c = board.I2C()
@@ -369,6 +375,10 @@ def loop():
     
     if O2_Enabled:
       SensorData['O2'] = O2_Data[int(random.random()*9)]
+
+    with open(Sensor_Log_File_Name, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(SensorData.values())
 
     if Transmit_Data:
       url = Transmit_URL
